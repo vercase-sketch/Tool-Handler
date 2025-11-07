@@ -295,9 +295,9 @@ RME.OnClientEvent:Connect(function(Key:string, Data:table)
 	end
 end)
 
---[[
 
-In the rules it was stated to explain the code as if you know the Roblox API very well. Specifically asked about CFrames, Therefore I have added some code from the AMA module that handles the arm movement. Explaining it broadly as if you know absolutely nothing about coding
+
+--> In the rules it was stated to explain the code as if you know the Roblox API very well. Specifically asked about CFrames, Therefore I have added some code from the AMA module that handles the arm movement. Explaining it broadly as if you know absolutely nothing about coding
 
 	self.Correlation = coroutine.create(function() --> To keep things simple I am using a coroutine to allow multitasking of the use of the tool whilst also being able to disable it whenever it is required example: needs to play other animations to replace the battery 
 		while true do
@@ -352,4 +352,3 @@ end
 
 
 
-]]--
