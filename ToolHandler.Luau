@@ -261,15 +261,14 @@ Player.CharacterAdded:Connect(function(Character) --> Player respawn setup
 	CharSetup(Character)
 end)
 -- Check for server sending you other player arm angles to you and assign properly. Expected data send rate is 500ms (Will start handling this with tables to reduce strain)
--- Needs update (Handle everyone in a table sent by server instead of per player each)
+-- Handles everyones data in a table sent by server 
 RME.OnClientEvent:Connect(function(Key:string, Data:table)
-
 	if Key == SENDOR then --> the key SENDOR is for the arm animation to validate just in case 
 		for i, PlayerData in ipairs(Data) do
 			local PlayerCharacter = PlayerData[1] -- Get the playercharacter
 			local TargetC0 = PlayerData[2] -- Get the targetCFrame0
 			if not PlayerCharacter or not TargetC0 then -- If none of those exist then dont do anything
-				if Debug then
+				if Debug then 
 					print("PlayerCharacter or TargetC0 does not exist..")
 				end
 				continue
@@ -278,7 +277,7 @@ RME.OnClientEvent:Connect(function(Key:string, Data:table)
 			if RUA then
 				local RS = RUA:FindFirstChild("RightShoulder") :: Motor6D --> Get the Shoulder Motor6D of that arm if the arm exists
 				if RS then -- If the Motor6D exists then assign the TargetCFrame to the motor6d
-					RS.C0 = TargetC0
+					RS.C0 = TargetC0 --> Apply the CFrame to that person (Several checks are done by the server to prevent exploiters from sending in abusive CFrame material)
 				else
 					if RS then
 						if Debug then
@@ -295,3 +294,62 @@ RME.OnClientEvent:Connect(function(Key:string, Data:table)
 		end
 	end
 end)
+
+--[[
+
+In the rules it was stated to explain the code as if you know the Roblox API very well. Specifically asked about CFrames, Therefore I have added some code from the AMA module that handles the arm movement. Explaining it broadly as if you know absolutely nothing about coding
+
+	self.Correlation = coroutine.create(function() --> To keep things simple I am using a coroutine to allow multitasking of the use of the tool whilst also being able to disable it whenever it is required example: needs to play other animations to replace the battery 
+		while true do
+			if not self.TOOL then --> This is a memory leak prevention 
+				warn("Possible memory leak prevention has passed!") -- dunno if this works we'll have to check on release on the error logs on site
+				coroutine.close(self.Correlation)
+			end --> These lines above are a safety check. if the tool is missing or destroyed it stops the coroutine to avoid wasting memory. It also sends out a warning so the developer can see it later
+
+            --> Sending data to the server.
+            --> Understanding server logic:
+            --> Player sends TargetCFrames for his RightUpperShoulder, Server checks if the CFrame meets its minimum-Maximum angle requirements 
+            --> If those requirements meet it will store his data inside a Dictionary and every 0.4 seconds it hands out the dictionary to all the recipients excluding the data of the recipient 
+
+
+            --> This portion sends TargetCFrames stored by Runservice to the server over a remote event. When the tool is equipped it sends the current CFrames of the RightShoulder Motor6D
+            --> Which contains its position and orientation
+            --> If the tool is no longer equipped it will send its previous CFrame which is obtained inside UpdateCharReference(Char) And then yield
+
+			if self.Equipped then
+				if self.targetC0 ~= nil then
+					self.RME:FireServer(AMA.SENDOR, self.targetC0)
+				end
+			else
+				self.RME:FireServer(AMA.SENDOR, AMA.PrevPos)
+				coroutine.yield()
+			end
+			task.wait(0.2)
+		end
+	end)
+	
+    --> Smooth Arm movement
+    --> This is where the arm animation happens.
+
+
+	if self.RIGHTJOINT6D then
+		self.TempConnections["RS"] = self.RunService.RenderStepped:Connect(function(DT) --> Stores the Runservice connection inside temporary connections to disconnect once the player no longer equipped his tool
+			local x, y, z = self.CAMERA.CFrame:ToEulerAnglesYXZ() --> This line of code looks at the players camera's angle favoring the Y axis first to allow the player to look at other angles without his arm breaking
+			local pos = self.RIGHTJOINT6D.C0.Position --> This stores the position of the Rightjoint C0 CFrame to make it easier to read
+			local clampedX = math.clamp(x, -1.5, 2) --> Here we clamp the x value (it actually is Y but this just works in my favor)
+			local currentC0 = self.RIGHTJOINT6D.C0 --> Get the current CFrame of the RightShoulder Motor6D
+			self.targetC0 = CFrame.new(pos) * CFrame.Angles(clampedX, 0, 0) --> Store the TargetC0 for the coroutine to pick up the data and send out to the server
+			self.RIGHTJOINT6D.C0 = currentC0:Lerp(self.targetC0, self.TWEENSPEED * DT) --> Smoothly moves the Arm around 
+		end)
+	end
+    --> Starting the Coroutine to send the TargetCFrame to the server
+	if coroutine.status(self.Correlation) == "suspended" then
+		coroutine.resume(self.Correlation)
+	end
+    --> Also store the Runservice connection inside Temporary connections for when AMA:Disable() is called it cleans up those temporary connections and stops the runservice
+	table.insert(self.StoredConnections, self.TempConnections)
+end
+
+
+
+]]--
