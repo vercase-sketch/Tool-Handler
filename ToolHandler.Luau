@@ -10,29 +10,30 @@ local Debug = false
 local RunService = game:GetService("RunService") 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Remote events
-local RM = ReplicatedStorage:WaitForChild("RM", 30)
-local RME = RM:WaitForChild("MOVEMENT", 30) :: RemoteEvent
+local RM = ReplicatedStorage:WaitForChild("RM", 10)
+local RME = RM:WaitForChild("MOVEMENT", 10) :: RemoteEvent
 -- Module scripts
 
 if not RM or not RME then 
 	error("RM or RME not found in replicated storage") 
 end
 
-local MDS = ReplicatedStorage:FindFirstChild("MDS") :: Folder 									
+local MDS = ReplicatedStorage:WaitForChild("MDS", 10) :: Folder 									
 if not MDS then
 	error("MDS returned incorrect parameter") 
 end
 
-local CSA_Module = MDS:FindFirstChild("ClientServerAccessible") :: ModuleScript					
+local CSA_Module = MDS:WaitForChild("ClientServerAccessible", 10) :: ModuleScript					
 if not CSA_Module then 
 	error("CSA MODULE RETURNED INCORRECT PARAMETER") 
 end
 local CSA = require(CSA_Module) :: ModuleScript
-local AMA = require(MDS:FindFirstChild("ArmMovementAnimator")) :: ModuleScript
+local AMA = require(MDS:WaitForChild("ArmMovementAnimator", 10)) :: ModuleScript
 
 if not CSA or not AMA then 
 	error("CSA OR AMA FAILED TO LOAD")
 end
+print("Finished Finding items")
 
 local SENDOR = "SR" --> This is a key for receiving target animation data from server and sending them to the server
 -- Player info
