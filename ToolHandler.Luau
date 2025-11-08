@@ -106,7 +106,7 @@ local function SetupTool(tool:Tool)
 	end
 
 	local toolattribute = tool:GetAttribute("Type") --> Returns the name of the tool in a string
-	if toolattribute ~= nil then -- If nothing returned then print this out
+	if toolattribute == nil then -- If nothing returned then print this out
 		if Debug then
 			warn("ToolType does not exist!")
 		end
