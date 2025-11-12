@@ -5,7 +5,6 @@
 
 ]]--
 
-
 -- Part 1
 
 --[[
@@ -77,10 +76,8 @@ end
 --> Key for when receiving data from the server in this case this key will be used to receive other players arm animation data
 local SENDOR = "SR" 
 
-
 -- Part 2
 --[[
-
 LocalPlayer is required to be able to keep track of the players tools in case when the player dies or respawns
 RME = Remote event to send data to server about the players Right Upper Arm CFrames
 Camera is required to be able to determine what angle the arm should be pointing at
@@ -89,11 +86,7 @@ ToolInstances table will track all the created tools and their connections
 ActiveConnections table will track the connections for where the tools go to detect when the tool has been equipped / unequipped
 Tools = a reference variable for a table of functions for tools 
 Player is just a reference to LocalPlayer
-
 ]]
-
-
-
 
 -- Key Variables for ArmMovementAnimator Modulescript
 AMA.RunService = RunService 
@@ -107,9 +100,7 @@ local ActiveConnections = {}
 local Tools = AMA.Tools 
 local Player = AMA.LP
 
-
 -- Functions
-
 
 -- Part 3
 --[[
@@ -131,7 +122,6 @@ Function UpdateArmReferences(char) is a function to update the arm references fo
 	Store the players previous RightUpperShoulder inside AMA.PrevPos to swap the players arm back to the previous position when tool is unequipped/Disabled AMA
 	
 ]]--
-
 
 function DPrompt(value:StringValue, TYPE) :BoolValue
 	if value == nil or TYPE == nil then 
@@ -183,7 +173,6 @@ SetupTool is called everytime a new tool is equipped and only runs if the tool i
 	Then store all those connections inside ToolInstances within a dictionary findable by the tool	
 ]]
 
-
 local function SetupTool(tool:Tool)
 	local conna, connb
 	
@@ -208,7 +197,6 @@ local function SetupTool(tool:Tool)
 		DPrompt("ToolType does not exist!", warn)
 		return
 	end
-	
 	
 	-- Checks if tool name exists inside Tools tables and set up connections for the tool to work if equipped and unequipped
 	if Tools.Equipped[toolattribute] then
@@ -244,6 +232,7 @@ function Destroy(child, chosen, force)
 	
 end
 ]]
+
 function Destroy(child, chosen, force) --> If the tool is removed from the players character this function is called
 	if child:IsA("Tool") then
 		RunService.Heartbeat:Wait() 	
@@ -251,7 +240,6 @@ function Destroy(child, chosen, force) --> If the tool is removed from the playe
 			DPrompt("tool failed to destroy attempt using force", print)
 			return 
 		end 
-		
 		-- If the tool exists within setted up toolinstances continue
 		if ToolInstances[child] then --> Should not fail unless tool is void
 			local Data = ToolInstances[child] --> Shorten the variable to make it easier to read			
@@ -301,7 +289,6 @@ function Destroy2(child, chosen, force) --> This function destroys the tool data
 	end
 end
 
-
 -- Part 6: Character Setup
 
 --[[
@@ -314,7 +301,6 @@ end
 	Script adds a connection to check wether the player has died to clear up the connections and then will create new connections to track the tools again
 	Needs to run every spawn because when the player dies a part of tracking stops working and arm references will be nil 
 ]]
-
 
 function CharSetup(Char:Model)
 	if not Char then
@@ -422,6 +408,7 @@ end)
 -- Check for server sending you other player arm angles to you and assign properly. Expected data send rate is 500ms (Will start handling this with tables to reduce strain)
 -- Needs update (Handle everyone in a table sent by server instead of per player each)
 RME.OnClientEvent:Connect(PublicArmHandler)
+
 
 
 
