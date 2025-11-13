@@ -188,7 +188,7 @@ SetupTool is called everytime a new tool is equipped and only runs if the tool i
 	Then store all those connections inside ToolInstances within a dictionary findable by the tool	
 ]]
 
-local function setupTool(tool:Tool)
+local function setupTool(tool)
 	local conna, connb
 	
 	if not tool:IsA("Tool") then
