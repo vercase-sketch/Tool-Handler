@@ -131,7 +131,7 @@ Function UpdateArmReferences(char) is a function to update the arm references fo
 
 function attemptDebug(value:string, TYPE) : boolean
 	if value == nil or TYPE == nil then 
-		attemptDebug("Value or type cannot be nil!")
+		print("Value or type cannot be nil!")
 		return false
 	end
 	if typeof(TYPE) == "function" then
