@@ -11,7 +11,7 @@
 Debugging mode is to find out what went wrong with the script, if debugging is set to true it will print or warn or sometimes even error depending on what I will be passing through the debugging function 
 
 Services:
-Runservice will be used to animate the localplayer RightUpperArm 
+Runservice will be used to animate the localplayer RightUpperArm (inaccessible inside this script. Its used inside a ModuleScript)
 ReplicatedStorage will be used to store ModuleScripts, Remote events that are accessible by the server and the client 
 
 
@@ -39,7 +39,7 @@ Player Character Use case: Track which tool has been equipped/Unequipped/Dropped
 local DEBUG_MODE = true
 
 -- Services 
-local RunService = game:GetService("RunService") 
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Folders
@@ -96,7 +96,6 @@ Player is just a reference to LocalPlayer
 ]]
 
 -- Key Variables for ArmMovementAnimator Modulescript
-AMA.RunService = RunService 
 AMA.LP = CSA.LocalPlayer() :: Player --> Returns localplayer
 AMA.RME =  RME 
 AMA.CAMERA = CSA.Camera() --> Returns currentcamera 
@@ -420,11 +419,6 @@ end)
 -- Check for server sending you other player arm angles to you and assign properly. Expected data send rate is 500ms (Will start handling this with tables to reduce strain)
 -- Needs update (Handle everyone in a table sent by server instead of per player each)
 RME.OnClientEvent:Connect(publicArmHandler)
-
-
-
-
-
 
 --> In the rules it was stated to explain the code as if you know the Roblox API very well. Specifically asked about CFrames, Therefore I have added some code from the AMA module that handles the arm movement. Explaining it broadly as if you know absolutely nothing about coding
 
