@@ -34,13 +34,34 @@ Player Character Use case: Track which tool has been equipped/Unequipped/Dropped
 
 ]]
 
+-- Services 
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- DEBUG_MODE MODE
 local DEBUG_MODE = true
 
--- Services 
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+function attemptDebug(value:string, TYPE) : boolean
+	if value == nil or TYPE == nil then 
+		print("Value or type cannot be nil!")
+		return false
+	end
+	if typeof(TYPE) == "function" then
+		if DEBUG_MODE then
+			if typeof(value) == "string" then
+				TYPE(value)
+				return true
+			end
+		end
+	else
+		warn("typeof TYPE is not a function!")
+		return false
+	end
+	
+	return false
+end
+
+
 
 -- Folders
 local MDS = ReplicatedStorage:WaitForChild("MDS", 30) 									
@@ -129,25 +150,7 @@ Function UpdateArmReferences(char) is a function to update the arm references fo
 	
 ]]--
 
-function attemptDebug(value:string, TYPE) : boolean
-	if value == nil or TYPE == nil then 
-		print("Value or type cannot be nil!")
-		return false
-	end
-	if typeof(TYPE) == "function" then
-		if DEBUG_MODE then
-			if typeof(value) == "string" then
-				TYPE(value)
-				return true
-			end
-		end
-	else
-		warn("typeof TYPE is not a function!")
-		return false
-	end
-	
-	return false
-end
+
 
 local function updateArmReferences(char)
 	if not char then
