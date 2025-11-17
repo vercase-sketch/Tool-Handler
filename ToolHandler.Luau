@@ -2,7 +2,7 @@
 	Author: TheOneAndOnlyReza
 	Details: This script handles tools and allows use of other tools with just one script allowing it to run better for older model phones that are bad with multi-tasking
 	Script context: LocalScript
-
+	Special thanks to you for reading my application. I hope I have explained everything well and following the rules. Have a great day.
 ]]--
 
 -- Part 1
