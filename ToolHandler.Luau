@@ -94,7 +94,7 @@ if not CSA or not AMA then
 end
 
 -- Player info
-local BackPack = CSA.LocalPlayer().Backpack  
+local BackPack = CSA.LocalPlayer():WaitForChild("Backpack", 5)  
 local Character = CSA.Character(CSA.LocalPlayer()) 
 
 -- Remote events
@@ -410,8 +410,8 @@ RME.OnClientEvent:Connect(publicArmHandler)
 	self.Correlation = coroutine.create(function() --> To keep things simple I am using a coroutine to allow multitasking of the use of the tool whilst also being able to disable it whenever it is required example: needs to play other animations to replace the battery 
 		while true do
 			if not self.TOOL then --> This is a memory leak prevention 
-				warn("Possible memory leak prevention has passed!") -- dunno if this works we'll have to check on release on the error logs on site
-				coroutine.close(self.Correlation)
+				warn("Possible memory leak prevention has passed! Tool will no longer send arm data. Please reset/rejoin") 
+				break
 			end --> These lines above are a safety check. if the tool is missing or destroyed it stops the coroutine to avoid wasting memory. It also sends out a warning so the developer can see it later
 
             --> Sending data to the server.
