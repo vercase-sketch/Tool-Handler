@@ -38,14 +38,22 @@ Player Character Use case: Track which tool has been equipped/Unequipped/Dropped
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+-- Folders
+local MDS = ReplicatedStorage:WaitForChild("MDS", 30) 									
+local RM = ReplicatedStorage:WaitForChild("RM", 30)
+
 -- DEBUG_MODE MODE
 local DEBUG_MODE = true
 
+local functionIsRunning = false
+
 function attemptDebug(value:string, TYPE) : boolean
-	if value == nil or TYPE == nil then 
-		print("Value or type cannot be nil!")
+	if value == nil then 
+		warn("AttemptDebug received incorrect arguments!")
 		return false
 	end
+	value = tostring(value)
+	TYPE = TYPE or print --> If TYPE was not passed in then use standard print function
 	if typeof(TYPE) == "function" then
 		if DEBUG_MODE then
 			if typeof(value) == "string" then
@@ -57,15 +65,11 @@ function attemptDebug(value:string, TYPE) : boolean
 		warn("typeof TYPE is not a function!")
 		return false
 	end
-	
+
 	return false
 end
 
 
-
--- Folders
-local MDS = ReplicatedStorage:WaitForChild("MDS", 30) 									
-local RM = ReplicatedStorage:WaitForChild("RM", 30)
 
 if not RM then
 	attemptDebug("RM does not exist", warn)
@@ -96,7 +100,7 @@ local Character = CSA.Character(CSA.LocalPlayer())
 -- Remote events
 local RME = RM:WaitForChild("MOVEMENT", 30)
 
-if not RM or not RME then 
+if not RME then 
 	attemptDebug("RM or RME not found in replicated storage", warn) 
 end
 
@@ -164,7 +168,7 @@ local function updateArmReferences(char)
 	if AMA.RIGHTARM then 
 		AMA.RIGHTJOINT6D = AMA.RIGHTARM:FindFirstChild("RightShoulder")
 		if AMA.RIGHTJOINT6D then
-			AMA.PrevPos = CFrame.new(AMA.RIGHTJOINT6D.C0.Position) 
+			AMA.PrevPos = AMA.RIGHTJOINT6D.C0
 		else
 			attemptDebug("Could not find Rightjoint6D", warn)
 		end
@@ -180,7 +184,7 @@ SetupTool(Tool)
 SetupTool is called everytime a new tool is equipped and only runs if the tool is valid and Tool is not already set up
 	--> Tool = the tool to set up
 	
-	Checks if the tool is a Tool and if it is not already set up in ToolInstances
+	Checks if the tool is a Tool and if it is not already set up in ToolInstances and Attribute Type must match
 	Sets up ArmMovementAnimator for the tool and stores it inside the ToolInstances table if ToolId exists
 	
 	Checks if the tool has a Type Attribute 
@@ -188,7 +192,7 @@ SetupTool is called everytime a new tool is equipped and only runs if the tool i
 	Then store all those connections inside ToolInstances within a dictionary findable by the tool	
 ]]
 
-local function setupTool(tool)
+local function setupTool(tool:Tool)
 	local conna, connb
 	
 	if not tool:IsA("Tool") then
@@ -203,13 +207,13 @@ local function setupTool(tool)
 
 	local ToolId = AMA.New(tool) -- Returns new self parameters for the tool mainly for the arm movement animations
 	if not ToolId then -- If it returned false then there is no need to set up the tool
-		attemptDebug("ToolId returned false!")
+		attemptDebug("ToolId returned false!", warn)
 		return
 	end
 
 	local toolattribute = tool:GetAttribute("Type") --> Returns the name of the tool in a string
 	if toolattribute == nil then -- If nothing returned then print this out
-		attemptDebug("ToolType does not exist!", warn)
+		warn("Tool has no attribute!")
 		return
 	end
 	
@@ -227,76 +231,46 @@ local function setupTool(tool)
 			Tools.Unequipped[toolattribute](ToolId)
 		end)
 	else
-		attemptDebug("Tools does not have equipped for this tool", warn)
+		attemptDebug("Tools does not have unequipped for this tool", warn)
 	end -- Store the connections and insert them into a ToolInstances  
-	ToolInstances[tool] = {ToolId, conna, connb}
+	ToolInstances[tool] = {ID = ToolId, Equip = conna, Unequip = connb}
 end
 
 -- Part 5
 --[[
-Use case:  Destroy and DestroyImmediate is used when the tool suddenly becomes nil or gets removed from the character / backpack 
+Use case:  unregistertool is used when the tool suddenly becomes nil or gets removed from the character / backpack 
 to prevent errors on Runservice for when the tool becomes void
 
-function Destroy(child, chosen, force)
+function unregisterTool(child, chosen, force)
 	--> child	= to check wether if it is a tool and check if chosen is ancestor of child
 	--> chosen	= ^
 	--> force	= if true then dont check if chosen is ancestor of child
 	
-	Heartbeat:Wait() used for when the player moved his tool
-	In DestroyImmediate this isnt called because DestroyImmediate will only be called if the the tool falls into the void or player and attempt to instantly destroy the connections before garbage collection picks them up
+	--> Simply tries to remove the tool from memory by disconnecting itself	
 	
 end
 ]]
 
-function destroy(child, chosen, force) --> If the tool is removed from the players character this function is called
+function unregisterTool(child, chosen, force) --> This function unregisters registered tools 
 	if child:IsA("Tool") then
-		RunService.Heartbeat:Wait() 	
-		if not force and chosen:IsAncestorOf(child) then  --> Chosen argument is the parent of the tool that I want to exclude from destroying the tools if force is true then chosen does not matter
-			attemptDebug("tool failed to destroy attempt using force", print)
-			return 
-		end 
-		-- If the tool exists within setted up toolinstances continue
-		if ToolInstances[child] then --> Should not fail unless tool is void
-			local Data = ToolInstances[child] --> Shorten the variable to make it easier to read			
-			if Data then
-				if Data[1] ~= nil then
-					Data[1]:_Destroy()  Data[1] = nil 
-				end --> Data1 is the modulescript self parameters
-				if Data[2] ~= nil then 
-					Data[2]:Disconnect() Data[2] = nil 
-				end --> Data2, Data3 is the equipped unequipped connections 
-				if Data[3] ~= nil then 
-					Data[3]:Disconnect() Data[3] = nil 
-				end
-			end-- Wether it worked or not it needs to remove itself from the table and clean up memory
-			Data = nil
-			ToolInstances[child] = nil
-		else
-			attemptDebug("Tool is not existing in toolinstances somehow", warn)
-		end
-	end
-end
-
-function destroyImmediate(child, chosen, force) --> This function destroys the tool data instantly if the tool suddenly becomes nil or gets removed from the character to prevent errors on Runservice for the sudden nil issue
-	if child:IsA("Tool") then
-		if not force and chosen:IsAncestorOf(child) then  --> Chosen argument is the parent of the tool that I want to exclude from destroying the tools if force is true then chosen does not matter
+		if not force and chosen and chosen:IsAncestorOf(child) then  --> Chosen argument is the parent of the tool that I want to exclude from destroying the tools if force is true then chosen does not matter
 				attemptDebug("Tool has failed to destroy attempt using force", print)			
 			return 
 		end 
 		-- If the tool exists within setted up toolinstances continue
 		local Data = ToolInstances[child] --> Shorten the variable to make it easier to read
 		if Data then
-			if Data[1] ~= nil then
-				Data[1]:_Destroy()  Data[1] = nil
+			if Data["ID"] ~= nil then
+				Data["ID"]:_Destroy()  Data["ID"] = nil
 			end --> Data1 is the modulescript self parameters
-			if Data[2] ~= nil then
-				Data[2]:Disconnect() Data[2] = nil 
+			if Data["Equip"] ~= nil then
+				Data["Equip"]:Disconnect() Data["Equip"] = nil 
 			end --> Data2, Data3 is the equipped unequipped connections 
-			if Data[3] ~= nil then
-				Data[3]:Disconnect() Data[3] = nil
+			if Data["Unequip"] ~= nil then
+				Data["Unequip"]:Disconnect() Data["Unequip"] = nil
 			end
-		end-- Wether it worked or not it needs to remove itself from the table and clean up memory 
-		Data = nil			
+		end
+		-- Wether it worked or not it needs to remove itself from the table and clean up memory 
 		ToolInstances[child] = nil
 	else
 		attemptDebug("Tool is not existing in toolinstances somehow", warn)
@@ -312,30 +286,20 @@ end
 	Safety measures: Check if connections already exist. if they exist then disconnect them and clear the table to prevent memory leaks or race fights or complete halt of script
 	
 	Script runs UpdateArmReferences and also starts tracking the tools and store the data
-	Script adds a connection to check wether the player has died to clear up the connections and then will create new connections to track the tools again
+	Script runs Register which adds a connection to check wether the player has died to clear up the connections and then will create new connections to track the tools again
 	Needs to run every spawn because when the player dies a part of tracking stops working and arm references will be nil 
 ]]
 
-function charSetup(Char:Model)
-	if not Char then
-		attemptDebug("Character does not exist in charsetup", warn)
-		return 
-	end
-	
-	local conncleared
-	-- If player somehow respawns before dying or something clear up the connections
-	for _, con in ipairs(ActiveConnections) do
-		conncleared = true
-		con:Disconnect()
-	end
-	table.clear(ActiveConnections)
-	
-	if conncleared then
-		attemptDebug("Player somehow respawnewd first and then died.", warn)
-	end
-	
-	updateArmReferences(Char) --> Either setup the armreferences or Reset the arm references just in case the Characters child variable becomes nil 
+function stopTracking(Char, Humanoid, Data)
+	Humanoid.Died:Once(function()  --> Once the player dies clear up the connections and destroy all the tool data No need to store this because it will run only once and is needed only once (when humanoid dies you need to reconnect humanoid)		
+		for tool, data_ in pairs(ToolInstances) do --> Loop through all backpack items and forcefully remove the tooldata to clean memory
+			unregisterTool(tool, BackPack, true)
+		end
+	end)
+end
 
+function startTracking(Char)	
+	local Humanoid = CSA.Humanoid(Char) :: Humanoid
 	--> Create connections to track the tools and store the data
 	local a = Char.ChildAdded:Connect(function(child)
 		setupTool(child)
@@ -343,36 +307,52 @@ function charSetup(Char:Model)
 
 	--> If a player unequips tool attempt to destroy the tool data 
 	local b = Char.ChildRemoved:Connect(function(child)
-		destroy(child, BackPack)
+		unregisterTool(child, BackPack)
 	end)
 
 	--> If a player unequips the tool attempt to destroy the tool data
 	local c = BackPack.ChildRemoved:Connect(function(child)
-		destroy(child, Char)
+		unregisterTool(child, Char)
 	end)
 
 	-- Store all the connections inside a table and disconnect them when the player dies
+	local Data = {a, b, c}
 	table.insert(ActiveConnections, a)
 	table.insert(ActiveConnections, b)
 	table.insert(ActiveConnections, c)
 
-	local Humanoid = CSA.Humanoid(Char) :: Humanoid
-	Humanoid.Died:Once(function()  --> Once the player dies clear up the connections and destroy all the tool data No need to store this because it will run only once and is needed only once (when humanoid dies you need to reconnect humanoid)
-		a:Disconnect()
-		b:Disconnect()
-		c:Disconnect()
-		a, b, c = nil, nil, nil
-		
-		local BackPackitems = BackPack:GetDescendants() --> Get all backpack items
-		local CharItems = Char:GetDescendants() --> Get all character items (I dont use findfirstchildofclass because sometimes there can be a bug where you have two tools equipped at the same time)
-		for _, tool in ipairs(BackPackitems) do --> Loop through all backpack items and forcefully remove the tooldata to clean memory
-			destroyImmediate(tool, BackPack, true)
-		end
+	--> Assigns a connection that will track on the players death
+	stopTracking(Char, Humanoid, Data)
+	--> If player dies it needs to stop tracking and start tracking again upon respawn
+end
 
-		for _, tool in ipairs(CharItems) do --> Loop through all character items and forcefully remove the tooldata and obviously tools only to clean memory
-			destroyImmediate(tool, Char, true)
+function charSetup(Char:Model)
+	if functionIsRunning then  --> Safety measurement against Race fights
+		return
+	end 
+	functionIsRunning = true
+	if not Char then
+		attemptDebug("Character does not exist in charsetup", warn)
+		return 
+	end
+	
+	local ConnForceCleared
+	-- If player somehow respawns before dying or something clear up the connections
+	for _, con in ipairs(ActiveConnections) do
+		if typeof(con) == "RBXScriptConnection" then
+			ConnForceCleared = true
+			con:Disconnect()
 		end
-	end)
+	end
+	table.clear(ActiveConnections)
+	
+	if ConnForceCleared then
+		attemptDebug("Player somehow respawnewd first and then died.", warn)
+	end
+	
+	updateArmReferences(Char) --> Either setup the armreferences or Reset the arm references just in case the Characters child variable becomes nil 
+	startTracking(Char)
+	functionIsRunning = false
 end
 
 -- Part 7:
@@ -387,13 +367,16 @@ Function PublicArmHandler(Key, Data)
 end
 ]]
 
-function publicArmHandler(Key:StringValue, Data:table)
+function publicArmHandler(Key:string, Data:{any})
 	if Key == SENDOR then --> If the key is sendor then we know how to handle data
 		for i, PlayerData in ipairs(Data) do
+			if typeof(PlayerData) ~= "table" then
+				continue
+			end
 			local PlayerCharacter = PlayerData[1] -- Get the playercharacter
 			local TargetC0 = PlayerData[2] -- Get the targetCFrame0
 			if not PlayerCharacter or not TargetC0 then -- If none of those exist then dont do anything
-					print("PlayerCharacter or TargetC0 does not exist..")
+					attemptDebug("PlayerCharacter or TargetC0 does not exist..", warn)
 				continue
 			end 
 			local RUA = PlayerCharacter:FindFirstChild("RightUpperArm") :: BasePart --> Get the rightupperarm of that player 
@@ -402,9 +385,7 @@ function publicArmHandler(Key:StringValue, Data:table)
 				if RS then -- If the Motor6D exists then assign the TargetCFrame to the motor6d
 					RS.C0 = TargetC0
 				else
-					if RS then
-						attemptDebug("RS IS NIL", warn)
-					end
+					attemptDebug("RS IS NIL", warn)
 				end
 			else 
 				attemptDebug("rua is nil", warn)
@@ -422,6 +403,7 @@ end)
 -- Check for server sending you other player arm angles to you and assign properly. Expected data send rate is 500ms (Will start handling this with tables to reduce strain)
 -- Needs update (Handle everyone in a table sent by server instead of per player each)
 RME.OnClientEvent:Connect(publicArmHandler)
+
 
 --> In the rules it was stated to explain the code as if you know the Roblox API very well. Specifically asked about CFrames, Therefore I have added some code from the AMA module that handles the arm movement. Explaining it broadly as if you know absolutely nothing about coding
 
@@ -460,11 +442,11 @@ RME.OnClientEvent:Connect(publicArmHandler)
 
 	if self.RIGHTJOINT6D then
 		self.TempConnections["RS"] = self.RunService.RenderStepped:Connect(function(DT) --> Stores the Runservice connection inside temporary connections to disconnect once the player no longer equipped his tool
-			local x, y, z = self.CAMERA.CFrame:ToEulerAnglesYXZ() --> This line of code looks at the players camera's angle favoring the Y axis first to allow the player to look at other angles without his arm breaking
+			local y, x, z = self.CAMERA.CFrame:ToEulerAnglesYXZ() --> This line of code looks at the players camera's angle favoring the Y axis first to allow the player to look at other angles without his arm breaking
 			local pos = self.RIGHTJOINT6D.C0.Position --> This stores the position of the Rightjoint C0 CFrame to make it easier to read
-			local clampedX = math.clamp(x, -1.5, 2) --> Here we clamp the x value (it actually is Y but this just works in my favor)
+			local clampedy = math.clamp(y, -1.5, 2) --> Here we clamp the y value 
 			local currentC0 = self.RIGHTJOINT6D.C0 --> Get the current CFrame of the RightShoulder Motor6D
-			self.targetC0 = CFrame.new(pos) * CFrame.Angles(clampedX, 0, 0) --> Store the TargetC0 for the coroutine to pick up the data and send out to the server
+			self.targetC0 = CFrame.new(pos) * CFrame.Angles(clampedy, 0, 0) --> Store the TargetC0 for the coroutine to pick up the data and send out to the server
 			self.RIGHTJOINT6D.C0 = currentC0:Lerp(self.targetC0, self.TWEENSPEED * DT) --> Smoothly moves the Arm around 
 		end)
 	end
