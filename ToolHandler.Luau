@@ -44,7 +44,7 @@ local RM = ReplicatedStorage:WaitForChild("RM", 30)
 
 -- DEBUG_MODE MODE
 local DEBUG_MODE = true
-
+--> Debounce for charsetup to prevent race fighting
 local functionIsRunning = false
 
 function attemptDebug(value:string, TYPE) : boolean
