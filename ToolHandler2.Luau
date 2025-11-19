@@ -5,7 +5,7 @@ local MDS = ReplicatedStorage:WaitForChild("MDS", 30)
 local RM = ReplicatedStorage:WaitForChild("RM", 30)
 local DEBUG_MODE = true
 local functionIsRunning = false
-function attemptDebug(value:string, TYPE) : boolean
+local function attemptDebug(value:string, TYPE) : boolean
 	if value == nil then
 		warn("AttemptDebug received incorrect arguments!")
 		return false
