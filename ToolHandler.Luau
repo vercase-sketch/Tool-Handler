@@ -5,7 +5,6 @@
 	context: Localscript
 ]]--
 
-
 -- Services 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -25,7 +24,7 @@ end
 
 -- Module scripts
 local CSA_Module = MDS:WaitForChild("ClientServerAccessible", 30) 					
-local AMA_Module = MDS:WaitForChild("MovementAnimator", 30) 
+local AMA_Module = MDS:WaitForChild("ArmMovementAnimator", 30) 
 
 local CSA = require(CSA_Module)
 local AMA = require(AMA_Module)
@@ -44,7 +43,7 @@ local activeConnections = {}
 
 -- Remote events
 local RME = RM:WaitForChild("MOVEMENT", 30)
-AMA.RME =  RME
+AMA.RME = RME
 
 -- Player references
 local character = CSA.Character(CSA.LocalPlayer()) 
@@ -85,6 +84,7 @@ local function updateArmReferences(char)
 		return
 	end
 
+	-- Reset Arm angle CFrame's and reassign the character, rightarm to Module script
 	AMA.targetC0 = CFrame.new() 
 	AMA.char = char
 	AMA.rightarm, AMA.rightjoint6d = CSA.GCP(char, Enum.BodyPartR15.RightUpperArm)  
@@ -92,6 +92,7 @@ local function updateArmReferences(char)
 	if AMA.rightarm then 
 		AMA.rightjoint6d = AMA.rightarm:FindFirstChild("RightShoulder")
 		if AMA.rightjoint6d then
+			-- Safely get the rightjoint6d and store its contents into previous position 
 			AMA.prevpos = AMA.rightjoint6d.C0
 		else
 			attemptDebug("Could not find Rightjoint6D", warn)
@@ -104,95 +105,125 @@ end
 -- Setup tool connections
 local function setupTool(tool:Tool)
 	local conna, connb
-	if not tool:IsA("Tool") then
+
+	-- Check if argument is a Tool
+	if tool == nil or not tool:IsA("Tool") then
 		attemptDebug("Passed in parameter is not a tool!", warn)
 		return 
 	end 
 
+	-- Stop if tool already exists
 	if toolInstances[tool] then 
 		attemptDebug("Tool instance already exists do not setup further", print)
 		return 
 	end 
 
+	-- Try get new self parameters for tool
 	local toolId = AMA.New(tool) 
 	if not toolId then 
 		attemptDebug("toolId returned false!", warn)
 		return
 	end
 
-	local toolattribute = tool:GetAttribute("Type") --> Returns the name of the tool in a string
-	if toolattribute == nil then -- If nothing returned then print this out
+	-- Try grab tool Id for equipped/unequipped/Activated functions
+	local toolAttribute = tool:GetAttribute("Type") 
+	if toolAttribute == nil then 
 		warn("Tool has no attribute!")
 		return
 	end
 
-	if Tools.Equipped[toolattribute] then
+	if Tools.Equipped[toolAttribute] then
 		conna = tool.Equipped:Connect(function()
-			Tools.Equipped[toolattribute](toolId)
+			Tools.Equipped[toolAttribute](toolId)
 		end)
 	else
 		attemptDebug("Tools does not have equipped for this tool!", warn)
 	end
 
-	if Tools.Unequipped[toolattribute] then
+	if Tools.Unequipped[toolAttribute] then
 		connb = tool.Unequipped:Connect(function()
-			Tools.Unequipped[toolattribute](toolId)
+			Tools.Unequipped[toolAttribute](toolId)
 		end)
 	else
 		attemptDebug("Tools does not have unequipped for this tool", warn)
 	end 
+	-- Tool setup successful store in toolInstances to prevent duplicate setup
 	toolInstances[tool] = {ID = toolId, Equip = conna, Unequip = connb}
 end
 
 -- Remove tool connections and clean memory
-function unregisterTool(child, chosen, force)
+local function unregisterTool(child, chosen, force)
 	if child:IsA("Tool") then
+		-- Prevent unregistering tools that were moved but not actually removed unless forced
 		if not force and chosen and chosen:IsAncestorOf(child) then 
 			attemptDebug("Tool has failed to destroy attempt using force", print)			
 			return 
 		end 
 
+		-- Find tool inside toolInstances and disable tool
 		local data = toolInstances[child]
 		if data then
 			if data["ID"] ~= nil then
-				data["ID"]:_Destroy()  data["ID"] = nil
-			end --> Data1 is the modulescript self parameters
+				data["ID"]:_Destroy()  data["ID"] = nil -- This function disconnects tool.Activated and cleans self
+			end 
 			if data["Equip"] ~= nil then
 				data["Equip"]:Disconnect() data["Equip"] = nil 
-			end --> Data2, Data3 is the equipped unequipped connections 
+			end
 			if data["Unequip"] ~= nil then
 				data["Unequip"]:Disconnect() data["Unequip"] = nil
 			end
 		end
-
+		-- Remove tool entry
 		toolInstances[child] = nil
 	else
 		attemptDebug("Tool is not a tool?", warn)
 	end
 end
 
+-- Check if humanoid is dead with several safety checks
+local function humanoidDeath(character)
+	if character and
+		typeof(character) == "Instance" and 
+		character:IsA("Model") then
+		local humanoid = CSA.Humanoid(character)
+		
+		local health = humanoid.Health
+		if health == 0 then
+			return true, health -- humanoid has died
+		else
+			return false, health
+		end
+	end
+	return false -- humanoid has not died
+end
+
 -- Stop tracking all tracked tools
-function stopTracking(char, Humanoid, Data)
-	Humanoid.Died:Once(function()  
-		for tool, data_ in pairs(toolInstances) do
+local function stopTrackingTracker(humanoid)
+	humanoid.Died:Once(function()  
+		for tool in pairs(toolInstances) do
 			unregisterTool(tool, backpack, true)
 		end
 	end)
 end
 
 -- Start tracking tools
-function startTracking(Char)	
-	local Humanoid = CSA.Humanoid(Char) :: Humanoid
+local function startTracking(Char)	
 	local a = Char.ChildAdded:Connect(function(child)
 		setupTool(child)
 	end)
 
 	local b = Char.ChildRemoved:Connect(function(child)
-		unregisterTool(child, backpack)
+		local died = humanoidDeath(character)
+		if not died then
+			unregisterTool(child, backpack)
+		end
 	end)
 
 	local c = backpack.ChildRemoved:Connect(function(child)
-		unregisterTool(child, Char)
+		local died = humanoidDeath(character)
+		if not died then
+			unregisterTool(child, Char)
+		end
 	end)
 
 	local data = {a, b, c}
@@ -200,11 +231,10 @@ function startTracking(Char)
 	table.insert(activeConnections, b)
 	table.insert(activeConnections, c)
 
-	stopTracking(Char, Humanoid, data)
 end
 
 -- Character setup handler on spawn
-function charSetup(Char:Model)
+local function charSetup(Char:Model)
 	if functionIsRunning then  
 		return
 	end 
@@ -224,17 +254,17 @@ function charSetup(Char:Model)
 	end
 	table.clear(activeConnections)
 
-	if ConnForceCleared then
-		attemptDebug("Player somehow respawnewd first and then died.", warn)
-	end
-
 	updateArmReferences(Char) 
 	startTracking(Char)
+
+	local humanoid = CSA.Humanoid(Char)
+	stopTrackingTracker(humanoid)
+
 	functionIsRunning = false
 end
 
 -- Handle events from server for other players arms
-function publicArmHandler(Key:string, Data:{any})
+local function publicArmHandler(Key:string, Data:{any})
 	if Key == SENDOR then 
 		for i, playerdata in ipairs(Data) do
 			if typeof(playerdata) ~= "table" then
