@@ -3,6 +3,7 @@
 	handles tool setup, equip'/unequip events and arm animatons for player
 	optimized for lower end devices
 	context: Localscript
+	No comments no empty space: https://github.com/vercase-sketch/Tool-Handler/blob/main/ToolHandler2.Luau
 ]]--
 
 -- Services 
