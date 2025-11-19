@@ -50,6 +50,8 @@ AMA.RME =  RME
 local character = CSA.Character(CSA.LocalPlayer()) 
 local backpack = CSA.LocalPlayer():WaitForChild("Backpack", 5)  
 local player = CSA.LocalPlayer() -- Returns localplayer safely
+
+-- Assign player references 
 AMA.LP = player
 AMA.CAMERA = CSA.Camera() -- Returns currentcamera 
 
@@ -86,7 +88,7 @@ local function updateArmReferences(char)
 	AMA.targetC0 = CFrame.new() 
 	AMA.char = char
 	AMA.rightarm, AMA.rightjoint6d = CSA.GCP(char, Enum.BodyPartR15.RightUpperArm)  
-	
+
 	if AMA.rightarm then 
 		AMA.rightjoint6d = AMA.rightarm:FindFirstChild("RightShoulder")
 		if AMA.rightjoint6d then
@@ -106,7 +108,7 @@ local function setupTool(tool:Tool)
 		attemptDebug("Passed in parameter is not a tool!", warn)
 		return 
 	end 
-	
+
 	if toolInstances[tool] then 
 		attemptDebug("Tool instance already exists do not setup further", print)
 		return 
@@ -149,7 +151,7 @@ function unregisterTool(child, chosen, force)
 			attemptDebug("Tool has failed to destroy attempt using force", print)			
 			return 
 		end 
-		
+
 		local data = toolInstances[child]
 		if data then
 			if data["ID"] ~= nil then
@@ -162,7 +164,7 @@ function unregisterTool(child, chosen, force)
 				data["Unequip"]:Disconnect() data["Unequip"] = nil
 			end
 		end
-		
+
 		toolInstances[child] = nil
 	else
 		attemptDebug("Tool is not a tool?", warn)
@@ -206,7 +208,7 @@ function charSetup(Char:Model)
 	if functionIsRunning then  
 		return
 	end 
-	
+
 	functionIsRunning = true
 	if not Char then
 		attemptDebug("Character does not exist in charsetup", warn)
@@ -225,11 +227,12 @@ function charSetup(Char:Model)
 	if ConnForceCleared then
 		attemptDebug("Player somehow respawnewd first and then died.", warn)
 	end
-	
+
 	updateArmReferences(Char) 
 	startTracking(Char)
 	functionIsRunning = false
 end
+
 -- Handle events from server for other players arms
 function publicArmHandler(Key:string, Data:{any})
 	if Key == SENDOR then 
@@ -237,15 +240,15 @@ function publicArmHandler(Key:string, Data:{any})
 			if typeof(playerdata) ~= "table" then
 				continue
 			end
-			
+
 			local PlayerCharacter = playerdata[1] 	-- Get the playercharacter
 			local TargetC0 = playerdata[2] 			-- Get the targetCFrame0
-			
+
 			if not PlayerCharacter or not TargetC0 then 
 				attemptDebug("PlayerCharacter or TargetC0 does not exist..", warn)
 				continue
 			end 
-			
+
 			local RUA = PlayerCharacter:FindFirstChild("RightUpperArm") :: BasePart 
 			if RUA then
 				local RS = RUA:FindFirstChild("RightShoulder") :: Motor6D 
@@ -260,11 +263,14 @@ function publicArmHandler(Key:string, Data:{any})
 		end
 	end
 end
--- Initial run on spawn
+
+-- Initial setup
 charSetup(character)
--- Assign event charsetup on each spawn
+
+-- Respawn handling
 player.CharacterAdded:Connect(function(character) 
 	charSetup(character)
 end)
--- Assign server events to function for arm handling
+
+-- Remote event listener
 RME.OnClientEvent:Connect(publicArmHandler)
