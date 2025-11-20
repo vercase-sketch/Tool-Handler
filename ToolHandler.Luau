@@ -191,8 +191,8 @@ local function humanoidDeath(character)
 		local humanoid = CSA.Humanoid(character)
 		local health = humanoid.Health
 
-		if health == 0 then
-			return true, health -- humanoid has died
+		if health == 0 or humanoid:GetState() == Enum.HumanoidStateType.Dead then
+			return true, 0 -- humanoid has died
 		else
 			return false, health
 		end
