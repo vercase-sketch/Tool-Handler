@@ -28,7 +28,7 @@ end
 local CSA_Module = MDS:WaitForChild("ClientServerAccessible", 30) 					
 local AMA_Module = MDS:WaitForChild("ArmMovementAnimator", 30) 
 
-local CSA = require(CSA_Module) -- Module script that returns parameters such as humanoid, bodyparts, etc, safer
+local CSA = require(CSA_Module) -- Module script that returns parameters: humanoid, localplayer, etc. Safely with multiple attempts if first try fails
 local AMA = require(AMA_Module) -- Module script that handles tool equipped unequipped functions and arm animation
 
 -- Constants
@@ -191,14 +191,14 @@ local function humanoidDeath(character)
 
 		local humanoid = CSA.Humanoid(character)
 		local health = humanoid.Health
-
+		
 		if health == 0 or humanoid:GetState() == Enum.HumanoidStateType.Dead then
 			return true, 0 -- humanoid has died
 		else
 			return false, health
 		end
 	end
-	return false -- humanoid has not died
+	return false -- humanoid does not exist
 end
 
 -- Stop tracking all tracked tools
