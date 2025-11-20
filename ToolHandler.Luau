@@ -28,8 +28,8 @@ end
 local CSA_Module = MDS:WaitForChild("ClientServerAccessible", 30) 					
 local AMA_Module = MDS:WaitForChild("ArmMovementAnimator", 30) 
 
-local CSA = require(CSA_Module)
-local AMA = require(AMA_Module)
+local CSA = require(CSA_Module) -- Module script that returns parameters such as humanoid, bodyparts, etc, safer
+local AMA = require(AMA_Module) -- Module script that handles tool equipped unequipped functions and arm animation
 
 -- Constants
 local DEBUG_MODE = true
@@ -54,7 +54,7 @@ local player = CSA.LocalPlayer() -- Returns localplayer safely
 
 -- Assign player references 
 AMA.LP = player
-AMA.CAMERA = CSA.Camera() -- Returns currentcamera 
+AMA.CAMERA = CSA.Camera() -- Returns currentcamera UseCase: calculate arm orientation according to camera orientation
 
 -- Debug function
 local function attemptDebug(value:string, TYPE) : boolean
@@ -106,7 +106,7 @@ end
 
 -- Setup tool connections
 local function setupTool(tool:Tool)
-	local conna, connb
+	local equippedC, unequippedC
 
 	-- Check if argument is a Tool
 	if tool == nil or not tool:IsA("Tool") then
@@ -135,7 +135,7 @@ local function setupTool(tool:Tool)
 	end
 
 	if Tools.Equipped[toolAttribute] then
-		conna = tool.Equipped:Connect(function()
+		equippedC = tool.Equipped:Connect(function()
 			Tools.Equipped[toolAttribute](toolId)
 		end)
 	else
@@ -143,14 +143,14 @@ local function setupTool(tool:Tool)
 	end
 
 	if Tools.Unequipped[toolAttribute] then
-		connb = tool.Unequipped:Connect(function()
+		unequippedC = tool.Unequipped:Connect(function()
 			Tools.Unequipped[toolAttribute](toolId)
 		end)
 	else
 		attemptDebug("Tools does not have unequipped for this tool", warn)
 	end 
 	-- Tool setup successful store in toolInstances to prevent duplicate setup
-	toolInstances[tool] = {ID = toolId, Equip = conna, Unequip = connb}
+	toolInstances[tool] = {ID = toolId, Equip = equippedC, Unequip = unequippedC}
 end
 
 -- Remove tool connections and clean memory
@@ -211,28 +211,28 @@ end
 
 -- Start tracking tools
 local function startTracking(Char)	
-	local a = Char.ChildAdded:Connect(function(child)
+	local childAdded = Char.ChildAdded:Connect(function(child)
 		setupTool(child)
 	end)
 
-	local b = Char.ChildRemoved:Connect(function(child)
+	local childRemoved = Char.ChildRemoved:Connect(function(child)
 		local died = humanoidDeath(character)
 		if not died then
 			unregisterTool(child, backpack)
 		end
 	end)
 
-	local c = backpack.ChildRemoved:Connect(function(child)
+	local bChildRemoved = backpack.ChildRemoved:Connect(function(child)
 		local died = humanoidDeath(character)
 		if not died then
 			unregisterTool(child, Char)
 		end
 	end)
 
-	local data = {a, b, c}
-	table.insert(activeConnections, a)
-	table.insert(activeConnections, b)
-	table.insert(activeConnections, c)
+	local data = {childAdded, childRemoved, c}
+	table.insert(activeConnections, childAdded)
+	table.insert(activeConnections, childRemoved)
+	table.insert(activeConnections, bChildRemoved)
 end
 
 -- Character setup handler on spawn
