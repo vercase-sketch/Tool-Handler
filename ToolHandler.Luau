@@ -186,8 +186,10 @@ local function humanoidDeath(character)
 	if character and
 		typeof(character) == "Instance" and 
 		character:IsA("Model") then
+
 		local humanoid = CSA.Humanoid(character)
 		local health = humanoid.Health
+
 		if health == 0 then
 			return true, health -- humanoid has died
 		else
