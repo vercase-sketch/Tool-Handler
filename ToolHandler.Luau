@@ -231,7 +231,6 @@ local function startTracking(Char)
 	table.insert(activeConnections, a)
 	table.insert(activeConnections, b)
 	table.insert(activeConnections, c)
-
 end
 
 -- Character setup handler on spawn
