@@ -229,7 +229,7 @@ local function startTracking(Char)
 		end
 	end)
 
-	local data = {childAdded, childRemoved, c}
+	local data = {childAdded, childRemoved, bChildRemoved}
 	table.insert(activeConnections, childAdded)
 	table.insert(activeConnections, childRemoved)
 	table.insert(activeConnections, bChildRemoved)
