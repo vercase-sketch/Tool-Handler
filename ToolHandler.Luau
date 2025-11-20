@@ -2,7 +2,8 @@
 	Tool handler
 	handles tool setup, equip'/unequip events and arm animatons for player
 	optimized for lower end devices
-	context: Localscript
+	context: Localscript in ScreenGui
+	ResetOnSpawn = false
 	No comments no empty space: https://github.com/vercase-sketch/Tool-Handler/blob/main/ToolHandler2.Luau
 ]]--
 
@@ -246,10 +247,9 @@ local function charSetup(Char:Model)
 		return 
 	end
 
-	local ConnForceCleared
+	-- Clean up previous connections if they exist may happen if the player dies.
 	for _, con in ipairs(activeConnections) do
 		if typeof(con) == "RBXScriptConnection" then
-			ConnForceCleared = true
 			con:Disconnect()
 		end
 	end
