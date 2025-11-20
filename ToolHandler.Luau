@@ -183,6 +183,7 @@ local function unregisterTool(child, chosen, force)
 end
 
 -- Check if humanoid is dead with several safety checks
+-- Prevents overuse of attempt destroys
 local function humanoidDeath(character)
 	if character and
 		typeof(character) == "Instance" and 
@@ -216,7 +217,7 @@ local function startTracking(Char)
 	end)
 
 	local childRemoved = Char.ChildRemoved:Connect(function(child)
-		local died = humanoidDeath(character)
+		local died = humanoidDeath(character) 
 		if not died then
 			unregisterTool(child, backpack)
 		end
