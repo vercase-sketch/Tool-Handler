@@ -204,13 +204,20 @@ function AMA.New(Tool)
 	-- Ensure equipped/unequipped functions exist for this tool type
 	if not Tools.Equipped[toolAttribute]  then
 		warn("Tool does not have equipped for ".. toolAttribute)
+        return
 	elseif not Tools.Unequipped[toolAttribute] then
 		warn("Tool does not have equipped for".. toolAttribute)
+        return
 	end
 	
 	-- Store references to the tool's equipped and unequipped functions	
-	self.equippedFunction = Tools.Equipped[toolAttribute]
-	self.unequippedFunction = Tools.Unequipped[toolAttribute]
+    if Tools.Equipped[toolAttribute] then 
+	    self.equippedFunction = Tools.Equipped[toolAttribute]
+    end
+
+    if Tools.Unequipped[toolAttribute] then 
+    	self.unequippedFunction = Tools.Unequipped[toolAttribute]
+    end
 	
 	return self
 end
