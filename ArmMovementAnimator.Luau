@@ -149,7 +149,7 @@ SetupTools.Flashlight= function(self)
 		self.SurfaceLight = self.LightEmitter.SurfaceLight
 	end
 end
-
+--[[ Coming soon..
 SetupTools.EMF = function(self)
 	-- Empty
 end
@@ -157,7 +157,7 @@ end
 SetupTools.Match = function(self)
 	-- Empty	
 end
-
+]]--
 -- Functions
 
 -- Creates a new AMA tool object
@@ -385,7 +385,7 @@ function AMA:_unregTool()
 	self.Enabled = nil
 	self.Equipped = nil
 
-	-- Clear equipped/unequipped cunction references
+	-- Clear equipped/unequipped function references
 	self.equippedFunction = nil
 	self.unequippedFunction = nil
 
