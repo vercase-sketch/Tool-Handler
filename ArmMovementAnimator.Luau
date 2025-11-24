@@ -253,9 +253,9 @@ end
 -- Enables the tool: starts arm animation and connects input events
 -- Plays the equip sound if available, starts coroutine to replicate arm movement to server
 -- and sets up event connections for tool activation and animation updates.
--- @param item: the tool object being enabled (optional)
+-- @param self: the tool object being enabled (optional)
 
-function AMA:Enable(item) 
+function AMA:Enable() 
 	Playing = true
 	
 	-- Close existing coroutine if it exists
