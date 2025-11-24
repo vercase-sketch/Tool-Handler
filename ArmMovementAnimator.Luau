@@ -301,9 +301,9 @@ function AMA:Enable(item)
 		self.TempConnections["RS"] = RunService.RenderStepped:Connect(function(DT)
 			local y, x, z = self.CAMERA.CFrame:ToEulerAnglesYXZ()	-- Get the camera's rotation angles (yaw, pitch, roll)
 
-			local pos = AMA.rightjoint6d.C0.Position				-- Clamp the pitch (Y-axis rotation) to prevent unnatural arm movement
+			local pos = AMA.rightjoint6d.C0.Position				-- Store the current position of the right arm joint
 
-			local clampedY = math.clamp(y, -1.5, 2)					-- Store the current position of the right arm joint
+			local clampedY = math.clamp(y, -1.5, 2)					-- Clamp the pitch (Y-axis rotation) to prevent unnatural arm movement
 
 			local currentC0 = AMA.rightjoint6d.C0 					-- Keep a reference to the current CFrame of the right arm joint for interpolation
 
